@@ -5,30 +5,25 @@ const EASY_OPPONENTS = [
 ];
 
 const TIER1_CLASSICS = new Set([
-  // Villa wins and notable Villa draws
   "2002-03|16 September 2002|Aston Villa",
   "2002-03|3 March 2003|Aston Villa",
+  "2002-03|23 February 2003|Liverpool",
   "2003-04|22 February 2004|Aston Villa",
-  "2004-05|12 December 2004|Aston Villa",
-  "2004-05|20 March 2005|Aston Villa",
-  "2010-11|16 January 2011|Aston Villa",
-  "2016-17|30 October 2016|Aston Villa",
-  // Big wins
   "2003-04|27 March 2004|Leeds United",
+  "2004-05|6 November 2004|Liverpool",
+  "2004-05|12 December 2004|Aston Villa",
+  "2004-05|12 February 2005|Liverpool",
+  "2004-05|20 March 2005|Aston Villa",
+  "2004-05|15 May 2005|Arsenal",
   "2005-06|27 August 2005|West Bromwich Albion",
+  "2007-08|2 December 2007|Tottenham Hotspur",
+  "2010-11|16 January 2011|Aston Villa",
+  "2010-11|20 November 2010|Chelsea",
   "2011-12|14 January 2012|Millwall",
   "2013-14|21 September 2013|Sheffield Wednesday",
   "2014-15|13 December 2014|Reading",
+  "2016-17|30 October 2016|Aston Villa",
   "2018-19|9 February 2019|Queens Park Rangers",
-  // Liverpool double 2004-05
-  "2004-05|6 November 2004|Liverpool",
-  "2004-05|12 February 2005|Liverpool",
-  // Other big scalps
-  "2002-03|23 February 2003|Liverpool",
-  "2004-05|15 May 2005|Arsenal",
-  "2007-08|2 December 2007|Tottenham Hotspur",
-  "2010-11|20 November 2010|Chelsea",
-  // Bellingham
   "2019-20|31 August 2019|Stoke City",
 ]);
 
@@ -243,7 +238,6 @@ function pickMatch() {
   const unused = key => !usedMatches.has(key);
   const matchKey = m => `${m.season}|${m.date}|${m.opponent}`;
 
-  // Questions 1-3: tier 1 classics only
   if (firstQuestion <= 3) {
     const pool = filteredPool.filter(m => unused(matchKey(m)) && m.tier1 && m.result === 'W');
     if (pool.length) {
@@ -257,7 +251,6 @@ function pickMatch() {
     firstQuestion++;
   }
 
-  // Questions 4-8: tier 1 or tier 2 classics, wins only
   if (firstQuestion <= 8) {
     const pool = filteredPool.filter(m => unused(matchKey(m)) && (m.tier1 || m.tier2) && m.result === 'W');
     if (pool.length) {
@@ -271,7 +264,6 @@ function pickMatch() {
     firstQuestion++;
   }
 
-  // Question 9+: normal difficulty-gated pool
   const maxDiff = getMaxDifficulty(streak);
   const winsOnly = streak <= 7;
 
@@ -315,6 +307,24 @@ function getResultWord(result) {
   if (result === 'W') return 'Win';
   if (result === 'L') return 'Loss';
   return 'Draw';
+}
+
+function buildHint() {
+  return Object.entries(current.scorers).map(([name, count]) => {
+    const surname = name.trim().split(' ').pop();
+    const masked = surname[0] + '_'.repeat(surname.length - 1);
+    return count > 1 ? `${masked} (${count})` : masked;
+  }).join(', ');
+}
+
+function doHint() {
+  if (hintUsed) return;
+  hintUsed = true;
+  const dead = loseLife();
+  const fb = document.getElementById('fb');
+  if (fb) fb.innerHTML = `<span style="color:#0033aa">${buildHint()}</span>`;
+  document.getElementById('btn-hint').disabled = true;
+  if (dead) { renderReveal(false, 'Hint'); setTimeout(() => showGameOver(), 1500); }
 }
 
 function renderStartScreen() {
@@ -518,24 +528,6 @@ function restartFromOver() {
   document.getElementById('hud-bar').classList.add('visible');
   updateHUD();
   pickMatch();
-}
-
-function buildHint() {
-  return Object.entries(current.scorers).map(([name, count]) => {
-    const surname = name.trim().split(' ').pop();
-    const masked = surname[0] + '_'.repeat(surname.length - 1);
-    return count > 1 ? `${masked} (${count})` : masked;
-  }).join(', ');
-}
-
-function doHint() {
-  if (hintUsed) return;
-  hintUsed = true;
-  const dead = loseLife();
-  const fb = document.getElementById('fb');
-  if (fb) fb.innerHTML = `<span style="color:#0033aa">${buildHint()}</span>`;
-  document.getElementById('btn-hint').disabled = true;
-  if (dead) { renderReveal(false, 'Hint'); setTimeout(() => showGameOver(), 1500); }
 }
 
 function doSkip() {
