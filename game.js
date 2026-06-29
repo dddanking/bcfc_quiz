@@ -203,7 +203,7 @@ ALL_MATCHES.forEach(m => {
 });
 
 let lives = 5, streak = 0, best = 0;
-let current = null, answered = false;
+let current = null, answered = false, hintUsed = false;
 let seasonMin = ALL_SEASONS[0];
 let seasonMax = ALL_SEASONS[ALL_SEASONS.length - 1];
 let filteredPool = [];
@@ -238,6 +238,7 @@ function weightedPick(pool) {
 
 function pickMatch() {
   answered = false;
+  hintUsed = false;
 
   const unused = key => !usedMatches.has(key);
   const matchKey = m => `${m.season}|${m.date}|${m.opponent}`;
@@ -426,6 +427,7 @@ function renderQuestion() {
       </div>
       <div class="actions">
         <button class="btn-primary" onclick="submitGuess()">Guess</button>
+        <button class="btn-hint" id="btn-hint" onclick="doHint()">Hint</button>
         <button class="btn-skip" onclick="doSkip()">Skip</button>
       </div>
       <div class="feedback" id="fb"></div>
@@ -445,7 +447,9 @@ function renderReveal(correct, guessedName) {
     ? `Correct — ${guessedName}`
     : guessedName === 'Skipped'
       ? `Skipped`
-      : `${guessedName} did not score in this match`;
+      : guessedName === 'Hint'
+        ? `Out of hints`
+        : `${guessedName} did not score in this match`;
 
   const venueWord = current.venue === 'H' ? 'Home' : 'Away';
   const venueVs = current.venue === 'H' ? 'Home vs' : 'Away at';
@@ -514,6 +518,24 @@ function restartFromOver() {
   document.getElementById('hud-bar').classList.add('visible');
   updateHUD();
   pickMatch();
+}
+
+function buildHint() {
+  return Object.entries(current.scorers).map(([name, count]) => {
+    const surname = name.trim().split(' ').pop();
+    const masked = surname[0] + '_'.repeat(surname.length - 1);
+    return count > 1 ? `${masked} (${count})` : masked;
+  }).join(', ');
+}
+
+function doHint() {
+  if (hintUsed) return;
+  hintUsed = true;
+  const dead = loseLife();
+  const fb = document.getElementById('fb');
+  if (fb) fb.innerHTML = `<span style="color:#0033aa">${buildHint()}</span>`;
+  document.getElementById('btn-hint').disabled = true;
+  if (dead) { renderReveal(false, 'Hint'); setTimeout(() => showGameOver(), 1500); }
 }
 
 function doSkip() {
